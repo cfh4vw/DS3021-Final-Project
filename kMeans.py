@@ -40,3 +40,21 @@ car_df["Cluster"] = clusters
 
 car_df.head()
 # %%
+# Group Clusters by mean
+car_df.groupby("Cluster").mean()
+# %%
+# Visualization of top variables
+plt.figure(figsize=(8,6))
+
+scatter = plt.scatter(
+    car_df["AccidentHistory"],."],
+    car_df["Mileage"],
+    c=car_df["Price($)"]
+)
+
+plt.colorbar(scatter, label="Price")
+plt.xlabel("Accident History")
+plt.ylabel("Mileage")
+plt.title("Price Clusters (Price as Color)")
+plt.show()
+# %%
