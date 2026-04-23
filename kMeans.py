@@ -130,7 +130,6 @@ plt.title("Final Clusters")
 plt.show()
 # %%
 # Evaluate final clusters
-# Really high inertia, showing points are really far from centroids
 print("Final Inertia:", kmeans_final.inertia_)
 print("Final Silhouette:", silhouette_score(scaled_data, car_df["Cluster_Final"]))
 # %%
