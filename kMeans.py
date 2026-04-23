@@ -85,3 +85,71 @@ plt.ylabel("Log Fuel Efficiency (L/100km)")
 plt.title("Price Clusters (Price as Color)")
 plt.show()
 # %%
+# Evaluate quality of clusters using silhouette score
+inertias = []
+sil_scores = []
+k_range = range(2, 11)
+
+for k in k_range:
+    km = KMeans(n_clusters=k, random_state=42)
+    labels = km.fit_predict(scaled_data)
+    inertias.append(km.inertia_)
+    sil_scores.append(silhouette_score(scaled_data, labels))
+
+print("Total Variance for k=2-10:", inertias)
+print("Silhouette Scores for k=2-10:", sil_scores)
+print("Model Score for k=10:", km.score(scaled_data))
+# %%
+# Elbow plot to find ideal k (# of clusters)
+plt.plot(k_range, inertias)
+plt.xlabel("Number of Clusters")
+plt.ylabel("Inertia")
+plt.title("Elbow Method")
+plt.show()
+# %%
+# Silhouette scores for k=2-10
+plt.plot(k_range, sil_scores)
+plt.xlabel("Number of Clusters")
+plt.ylabel("Silhouette Score")
+plt.title("Silhouette Scores")
+plt.show()
+# %%
+# Run final model with k=6
+kmeans_final = KMeans(n_clusters=6, random_state=42)
+car_df["Cluster_Final"] = kmeans_final.fit_predict(scaled_data)
+
+plt.figure(figsize=(8,6))
+plt.scatter(
+    car_df["Mileage(km)"],
+    car_df["FuelEfficiency(L/100km)"],
+    c=car_df["Cluster_Final"]
+)
+plt.xlabel("Mileage (km)")
+plt.ylabel("Fuel Efficiency (L/100km)")
+plt.title("Final Clusters")
+plt.show()
+# %%
+# Evaluate final clusters
+# Really high inertia, showing points are really far from centroids
+print("Final Inertia:", kmeans_final.inertia_)
+print("Final Silhouette:", silhouette_score(scaled_data, car_df["Cluster_Final"]))
+# %%
+# Bring back make and model
+car_df["Brand"] = car["Brand"]
+car_df["Model"] = car["Model"]
+# %%
+# Use the model to find underpriced and overpriced cars based on quality
+car_df["Price($)"] = target
+car_df["Cluster"] = car_df["Cluster_Final"]
+car_df["Difference"] = car_df["Price($)"] - car_df.groupby("Cluster")["Price($)"].transform("mean")
+
+# %%
+# Underpriced cars
+car_df.sort_values("Difference").head(10)
+
+# %%
+# Overpriced cars
+car_df.sort_values("Difference", ascending=False).head(10)
+
+
+# %%
