@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.metrics import silhouette_score
+from matplotlib.patches import Ellipse
 
 # %%
 # Import Dataset
@@ -29,11 +30,19 @@ car_df = car.drop(columns=[
 # %%
 car_df.head()
 
+
 # %%
 # One hot encode categorical variables
 car_df = pd.get_dummies(car_df, columns=['Condition', 'BodyType', 'AccidentHistory'], drop_first=True, dtype=int)
+
 # %%
-scaler = MinMaxScaler()
+# scale numerical data with log to help with skew and make clearer clusters
+car_df["Mileage(km)"] = np.log1p(car_df["Mileage(km)"])
+car_df["FuelEfficiency(L/100km)"] = np.log1p(car_df["FuelEfficiency(L/100km)"])
+car_df["Horsepower"] = np.log1p(car_df["Horsepower"])
+car_df["CarAge"] = np.log1p(car_df["CarAge"])
+# %%
+scaler = StandardScaler()
 scaled_data = scaler.fit_transform(car_df)
 
 # %%
@@ -71,19 +80,7 @@ plt.xlabel("Mileage (km)")
 plt.ylabel("FuelEfficiency(L/100km)")
 plt.title("Price Clusters (Price as Color)")
 plt.show()
-# %%
-plt.figure(figsize=(8,6))
-scatter = plt.scatter(
-    np.log(car_df["Mileage(km)"]),
-    np.log(car_df["FuelEfficiency(L/100km)"]),
-    c=target,
-    alpha=0.5
-)
-plt.colorbar(scatter, label="Price ($)")
-plt.xlabel("Log Mileage (km)")
-plt.ylabel("Log Fuel Efficiency (L/100km)")
-plt.title("Price Clusters (Price as Color)")
-plt.show()
+
 # %%
 # Evaluate quality of clusters using silhouette score
 inertias = []
@@ -119,19 +116,45 @@ kmeans_final = KMeans(n_clusters=6, random_state=42)
 car_df["Cluster_Final"] = kmeans_final.fit_predict(scaled_data)
 
 plt.figure(figsize=(8,6))
-plt.scatter(
+final = plt.scatter(
     car_df["Mileage(km)"],
     car_df["FuelEfficiency(L/100km)"],
-    c=car_df["Cluster_Final"]
+    c=target
 )
+
+plt.colorbar(final, label="Price ($)")
 plt.xlabel("Mileage (km)")
 plt.ylabel("Fuel Efficiency (L/100km)")
 plt.title("Final Clusters")
 plt.show()
+
+# %%
+# labeling clusters
+
+plt.figure(figsize=(8,6))
+final = plt.scatter(
+    car_df["Mileage(km)"],
+    car_df["FuelEfficiency(L/100km)"],
+    c=car_df["Cluster_Final"]
+)
+
+plt.colorbar(final, label="Price ($)")
+plt.xlabel("Mileage (km)")
+plt.ylabel("Fuel Efficiency (L/100km)")
+plt.title("Final Clusters")
+plt.show()
+
 # %%
 # Evaluate final clusters
 print("Final Inertia:", kmeans_final.inertia_)
 print("Final Silhouette:", silhouette_score(scaled_data, car_df["Cluster_Final"]))
+# %%
+# convert numerical data back to original for summary interpretation
+car_df["Mileage(km)"] = np.expm1(car_df["Mileage(km)"])
+car_df["FuelEfficiency(L/100km)"] = np.expm1(car_df["FuelEfficiency(L/100km)"])
+car_df["Horsepower"] = np.expm1(car_df["Horsepower"])
+car_df["CarAge"] = np.expm1(car_df["CarAge"])
+
 # %%
 # Bring back make and model
 car_df["Brand"] = car["Brand"]
@@ -140,7 +163,7 @@ car_df["Model"] = car["Model"]
 # Use the model to find underpriced and overpriced cars based on quality
 car_df["Price($)"] = target
 car_df["Cluster"] = car_df["Cluster_Final"]
-car_df["Difference"] = car_df["Price($)"] - car_df.groupby("Cluster")["Price($)"].transform("mean")
+car_df["Difference"] = car_df["Price($)"] - car_df.groupby("Cluster")["Price($)"].transform("median")
 
 # %%
 # Underpriced cars
