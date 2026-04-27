@@ -138,7 +138,6 @@ final = plt.scatter(
     c=car_df["Cluster_Final"]
 )
 
-plt.colorbar(final, label="Price ($)")
 plt.xlabel("Mileage (km)")
 plt.ylabel("Fuel Efficiency (L/100km)")
 plt.title("Final Clusters")
